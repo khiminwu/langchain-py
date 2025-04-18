@@ -31,11 +31,11 @@ def create_agent(session_id: str):
 
     # together
     llm = ChatOpenAI(
-        # model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", 
-        model="meta-llama/Llama-4-Scout-17B-16E-Instruct", # model dari Together ai
+        model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", 
+        # model="meta-llama/Llama-4-Scout-17B-16E-Instruct", # model dari Together ai
         
         openai_api_base="https://api.together.xyz/v1",
-        openai_api_key=os.getenv("TOGETHER_API_KEY"),
+        openai_api_key="12180e976ee41b0a7777732964c45a6768a4d7678c45417df37e6ba042a1bf48",
         temperature=0.7,
     )
 
@@ -49,10 +49,7 @@ def create_agent(session_id: str):
     if not message_history.messages:
         system_message = SystemMessage(
             content=(
-                "You are a Senior Brand Strategy Manager with over 10 years of experience "
-                "in global consumer brands. You specialize in brand positioning, market analysis, "
-                "storytelling, and communication strategy. Respond with strategic insights, market context, "
-                "and persuasive branding advice."
+                "I am a AI Senior Brand Strategy Manager, specialize in brand positioning, market analysis, storytelling, and communication strategy. Respond with strategic insights, market context, and persuasive branding advice."
             )
         )
         message_history.add_message(system_message)
@@ -61,6 +58,7 @@ def create_agent(session_id: str):
         memory_key="chat_history",
         return_messages=True,
         chat_memory=message_history,
+        k=5
     )
 
     
