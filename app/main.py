@@ -22,3 +22,11 @@ async def ask_agent(request: QueryRequest):
         return {"response": response}
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/health")
+def health_check():
+    return JSONResponse(content={"status": "ok", "message": "Service is healthy"}, status_code=200)
+
+@app.get("/")
+def health_check():
+    return JSONResponse(content={"status": "ok", "message": "Service is healthy"}, status_code=200)
