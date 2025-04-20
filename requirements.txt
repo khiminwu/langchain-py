@@ -3,5 +3,15 @@ uvicorn
 langchain
 langchain-community
 langchain-openai
+langchain_experimental
 python-dotenv
 redis
+langchain-google-vertexai
+google-cloud-aiplatform
+requests
+python-multipart
+pdfminer.six
+python-docx
+torch
+transformers
+accelerate
