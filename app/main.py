@@ -94,3 +94,7 @@ async def history(request: QueryRequest):
 @app.get("/health")
 def health_check():
     return JSONResponse(content={"status": "ok", "message": "Service is healthy"}, status_code=200)
+
+@app.get("/")
+def health_check():
+    return JSONResponse(content={"status": "ok", "message": "Service is healthy"}, status_code=200)
