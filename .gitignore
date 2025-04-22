@@ -1,6 +1,7 @@
 /temp/
 /__pycache__/
 /app/__pycache__/
+**/__pycache__/
 .env
 /.env
 .env
