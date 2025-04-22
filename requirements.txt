@@ -16,3 +16,8 @@ torch
 transformers
 accelerate
 google
+pg8000
+cloud-sql-python-connector 
+sqlalchemy 
+pgvector
+langserve

@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import VertexAI,ChatVertexAI
 from google.cloud import aiplatform
 from google.oauth2 import service_account
 from langchain.schema import SystemMessage
@@ -11,7 +11,7 @@ import json
 load_dotenv()
 
 creds_json =json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT"))
-print(creds_json)
+# print(creds_json)
 credentials = service_account.Credentials.from_service_account_info(creds_json)
 # credentials = service_account.Credentials.from_service_account_file("./app/google.json")
 def llm():
@@ -34,10 +34,10 @@ def llm():
     #     temperature=0.7,
     # )
 
-    return VertexAI(
-        model_name="gemini-2.0-flash-lite-001",
-        temperature=0.2,
-        max_output_tokens=100,
+    return ChatVertexAI(
+        model_name="gemini-1.5-pro-002",
+        temperature=0.7,
+        max_output_tokens=1024,
         top_k=40,
         top_p=0.95,
         credentials=credentials,

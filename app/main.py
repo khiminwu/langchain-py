@@ -1,12 +1,16 @@
 from fastapi import FastAPI, Request,File, UploadFile,Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from app.agent import create_agent, chat,analyze,strategy
+from app.agent import chain_tool
 from app.models import QueryRequest
 from fastapi.middleware.cors import CORSMiddleware
-from langchain.document_loaders import TextLoader, PyPDFLoader, Docx2txtLoader
+# from langchain.document_loaders import TextLoader, PyPDFLoader, Docx2txtLoader
 import os, shutil
+# from app.config.psql import Connect
 from typing import Optional
+from app.job import save_pdf_to_pgvector
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 app = FastAPI()
 
@@ -18,6 +22,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+async def init_db():
+    chain_tool("init")
+    # global store
+    # store = Connect()
+
 @app.post("/ask")
 async def ask(session_id: str = Form(...),
                 file: Optional[UploadFile] = File(None),
@@ -28,6 +39,9 @@ async def ask(session_id: str = Form(...),
                 benefit: str = Form(""),
                 reason: str = Form(""),
                 type: str = Form("chat")):
+    
+    from app.agent import create_agent, chat,analyze,strategy
+
     try:
         
         if(type=="analyze"):
@@ -39,27 +53,15 @@ async def ask(session_id: str = Form(...),
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            # Determine loader
-            if file.filename.endswith(".pdf"):
-                loader = PyPDFLoader(file_path)
-            elif file.filename.endswith(".docx"):
-                loader = Docx2txtLoader(file_path)
-            else:
-                loader = TextLoader(file_path)
-
-            docs = loader.load()
-            full_text = "\n".join([doc.page_content for doc in docs])
-
-            # Summarize with prompt
-            summary_prompt = f"Please summarize the following document:\n\n{full_text[:4000]}"
-            # print("summary_prompt",summary_prompt)
+            ext = os.path.splitext(file.filename)[1] 
+            text=save_pdf_to_pgvector(file_path,ext)
+            
+            summary_prompt = f"Please summarize the following document:\n\n{text[:4000]}"
+            
             result = analyze(summary_prompt,session_id)
             return {"response": result}
-            # agent,memory = create_agent(session_id)
-            # result = agent.invoke({"input":prompt+"\n\n"+full_text[:4000]})
-
-            # os.remove(file_path)
-            # return {"response": type}
+            # return {"response": 'ok'}
+            
         elif(type=="strategy"):
             prompt = (
                 f"Brand: {brand_name}\n"

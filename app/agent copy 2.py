@@ -14,7 +14,7 @@ from langchain_community.tools.google_serper.tool import GoogleSerperResults
 from google.cloud import aiplatform
 from google.oauth2 import service_account
 from langchain.schema import SystemMessage
-from app.config.psql import Connect
+
 from langchain_experimental.tools.python.tool import PythonREPLTool
 import torch
 
@@ -33,6 +33,7 @@ load_dotenv()
 # Now your app should authenticate using the service account key.
 # aiplatform.init(project="devops-440402", location="us-central1")
 
+print(llm)
 
 def is_greeting(query: str) -> bool:
     greetings = ["hi", "hello", "hey", "hai", "hola", "yo"]
@@ -54,33 +55,16 @@ llm = llm()
 # ✅ Dictionary untuk simpan memory per session
 session_memories = {}
 
-vectorstore = Connect()
-retriever = vectorstore.as_retriever()
-
-
-# prompt = PromptTemplate(
-#     input_variables=["chat_history", "input"],
-#     template="""
-#         The following is a conversation between a helpful AI and a human:
-#         {chat_history}
-#         Human: {input}
-#         AI:"""
-#     )
-
 
 prompt = PromptTemplate(
     input_variables=["chat_history", "input"],
     template="""
-    The following is a conversation between a helpful AI and a human:
-    {chat_history}
-    You are an expert on Google Cloud Platform.
-    Answer the following question using the provided context.
+        The following is a conversation between a helpful AI and a human:
+        {chat_history}
+        Human: {input}
+        AI:"""
+    )
 
-    {input}
-
-    Answer:
-    """
-)
 
 
 # Create memory using Redis
@@ -90,34 +74,19 @@ def get_memory(session_id: str):
     return ConversationBufferMemory(chat_memory=history, memory_key="chat_history", return_messages=False)
 
 
-
-def chain_tool(session_id: str):
-    print("session_id",session_id)
+def chain_tool(session_id:str):
     memory = get_memory(session_id)
-
     chain = LLMChain(
         llm=llm,
         prompt=prompt,
         verbose=True,
         memory=memory,
     )
-
-    # response = chain.run(input="business SWOT Analysis")
-    # print(response)
-
-    def run_tool(input: str) -> str:
-        docs = retriever.get_relevant_documents(input)
-        context = "\n".join([doc.page_content for doc in docs])
-        full_input = f"Context:\n{context}\n\nQuestion:\n{input}"
-        return chain.run(input=full_input)
-
     return Tool(
         name="MemoryChatTool",
-        func=run_tool,
-        description="Chat with context from vector DB and persistent memory"
+        func=chain.run,
+        description="Useful for chatting with the AI and remembering past conversations.",
     )
-
-
 
 def generate_positioning(input: str) -> str:
     prompt = f"""
@@ -147,14 +116,13 @@ def create_agent(session_id: str,llm_tools=None):
     
     
     tools = [chain_tool(session_id)]+llm_tools
-    
 
     agent = initialize_agent(
         tools=tools,
         llm=llm,
         # agent=AgentType.OPENAI_MULTI_FUNCTIONS,
-        agent=AgentType.OPENAI_FUNCTIONS, # ⚠️ Bukan "MULTI_FUNCTIONS", karena Together belum full support
-        # agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        # agent=AgentType.OPENAI_FUNCTIONS, # ⚠️ Bukan "MULTI_FUNCTIONS", karena Together belum full support
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         memory=memory,
         verbose=True,
         max_iterations=2,
@@ -174,9 +142,8 @@ def chat(prompt:str, session_id:str):
     ]
     
     agent,memory = create_agent(session_id,tools)
-    # result = agent.invoke({"input": prompt})
     result = agent.invoke({"input": prompt})
-    return result.get("output", "No output.")
+    return {"response": result.get("output", "No output.")}
     # result = agent.run(prompt)
     # return result
 
